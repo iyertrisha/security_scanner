@@ -1,0 +1,8 @@
+{
+  "pair_id": "pair-01",
+  "added_nodes": [],
+  "removed_nodes": [],
+  "added_edges": [{"source": "internet", "target": "aws_security_group.app_sg"}],
+  "removed_edges": [],
+  "new_exposures": ["aws_security_group.app_sg"]
+}

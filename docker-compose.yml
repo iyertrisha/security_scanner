@@ -1,0 +1,120 @@
+version: "3.9"
+
+networks:
+  netguard_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+
+services:
+  db:
+    image: postgres:14
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: netguard
+      POSTGRES_PASSWORD: netguard
+      POSTGRES_DB: netguard
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - netguard_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U netguard -d netguard"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  parser:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.parser
+    restart: unless-stopped
+    ports:
+      - "8001:8001"
+    env_file:
+      - .env
+    networks:
+      - netguard_network
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/health')"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  graph_engine:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.graph_engine
+    restart: unless-stopped
+    ports:
+      - "8002:8002"
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - netguard_network
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8002/health')"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  risk_scorer:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.risk_scorer
+    restart: unless-stopped
+    ports:
+      - "8003:8003"
+    env_file:
+      - .env
+    networks:
+      - netguard_network
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8003/health')"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.api
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+      parser:
+        condition: service_started
+      graph_engine:
+        condition: service_started
+      risk_scorer:
+        condition: service_started
+    networks:
+      - netguard_network
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.frontend
+    restart: unless-stopped
+    ports:
+      - "5173:5173"
+    env_file:
+      - .env
+    networks:
+      - netguard_network

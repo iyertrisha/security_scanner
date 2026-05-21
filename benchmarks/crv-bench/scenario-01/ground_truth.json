@@ -1,0 +1,12 @@
+{
+  "scenario_id": "scenario-01",
+  "resources_involved": ["aws_security_group.web_sg"],
+  "attack_path": ["internet", "aws_security_group.web_sg"],
+  "expected_findings": ["SSH_EXPOSED_TO_PUBLIC"],
+  "expected_blast_radius": {
+    "aws_security_group.web_sg": {
+      "count": 1,
+      "resources": ["aws_security_group.web_sg"]
+    }
+  }
+}

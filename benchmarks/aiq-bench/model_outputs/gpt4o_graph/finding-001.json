@@ -1,0 +1,6 @@
+{
+  "finding_id": "finding-001",
+  "explanation": "SSH is exposed publicly.",
+  "remediation": "Restrict CIDR to corporate ranges.",
+  "variant": "gpt4o_graph"
+}

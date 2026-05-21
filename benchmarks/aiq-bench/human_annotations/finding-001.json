@@ -1,0 +1,13 @@
+{
+  "finding_id": "finding-001",
+  "expert_explanation": "Public SSH allows brute-force attempts.",
+  "expert_remediation": "Restrict to trusted CIDRs and use SSM.",
+  "expert_severity": "CRITICAL",
+  "scores": {
+    "accuracy": 5,
+    "specificity": 4,
+    "blast_radius_correctness": 4,
+    "actionability": 5,
+    "calibration": 4
+  }
+}

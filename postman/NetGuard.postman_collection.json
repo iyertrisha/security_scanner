@@ -1,0 +1,709 @@
+{
+  "info": {
+    "name": "NetGuard",
+    "_postman_id": "netguard-local-v1",
+    "description": "Happy-path requests for NetGuard microservices (localhost defaults).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "apiUrl",
+      "value": "http://localhost:8000"
+    },
+    {
+      "key": "parserUrl",
+      "value": "http://localhost:8001"
+    },
+    {
+      "key": "graphEngineUrl",
+      "value": "http://localhost:8002"
+    },
+    {
+      "key": "riskScorerUrl",
+      "value": "http://localhost:8003"
+    },
+    {
+      "key": "scanId",
+      "value": "1"
+    },
+    {
+      "key": "graphId",
+      "value": "1"
+    },
+    {
+      "key": "overrideId",
+      "value": "1"
+    }
+  ],
+  "item": [
+    {
+      "name": "API",
+      "item": [
+        {
+          "name": "Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{apiUrl}}/health"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status OK', function () { pm.expect(pm.response.code).to.be.oneOf([200, 201]); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST api/scan",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{apiUrl}}/api/scan",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"repository\": \"demo/repo\", \"repository_url\": \"https://github.com/demo/repo\", \"pr_number\": 1, \"commit_sha\": \"abcdef1234567890abcdef1234567890abcdabcd\", \"files\": [{\"filename\": \"main.tf\", \"content\": \"resource \\\"aws_security_group\\\" \\\"web\\\" {\\n  vpc_id = \\\"vpc-1\\\"\\n}\\n\"}]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status OK', function () { pm.expect(pm.response.code).to.be.oneOf([200, 201]); });",
+                  "try { var j = pm.response.json(); if (j.scan_id) pm.collectionVariables.set('scanId', j.scan_id); } catch (e) {}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET api/scans",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{apiUrl}}/api/scans?page=1&page_size=10"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status OK', function () { pm.expect(pm.response.code).to.be.oneOf([200, 201]); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET api/scans/{scanId}",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{apiUrl}}/api/scans/{{scanId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status OK', function () { pm.expect(pm.response.code).to.be.oneOf([200, 201]); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET api/scans/{scanId}/graph",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{apiUrl}}/api/scans/{{scanId}}/graph"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status OK', function () { pm.expect(pm.response.code).to.be.oneOf([200, 201]); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET api/scans/{scanId}/diff",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{apiUrl}}/api/scans/{{scanId}}/diff"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status OK', function () { pm.expect(pm.response.code).to.be.oneOf([200, 201]); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET api/repos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{apiUrl}}/api/repos"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status OK', function () { pm.expect(pm.response.code).to.be.oneOf([200, 201]); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET api/stats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{apiUrl}}/api/stats"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status OK', function () { pm.expect(pm.response.code).to.be.oneOf([200, 201]); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST api/overrides",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{apiUrl}}/api/overrides",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"finding_type\": \"SSH_EXPOSED_TO_PUBLIC\", \"resource_pattern\": \"*\", \"severity_override\": null, \"justification\": \"Postman test override\", \"created_by\": \"postman\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status OK', function () { pm.expect(pm.response.code).to.be.oneOf([200, 201]); });",
+                  "try { var j = pm.response.json(); if (j.id) pm.collectionVariables.set('overrideId', j.id); } catch (e) {}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET api/overrides",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{apiUrl}}/api/overrides"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status OK', function () { pm.expect(pm.response.code).to.be.oneOf([200, 201]); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "DELETE api/overrides/{overrideId}",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{apiUrl}}/api/overrides/{{overrideId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status OK', function () { pm.expect(pm.response.code).to.be.oneOf([200, 201]); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST api/evaluations",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{apiUrl}}/api/evaluations",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"scan_id\": 1, \"accuracy\": 4, \"specificity\": 4, \"blast_radius_correctness\": 4, \"actionability\": 4, \"calibration\": 4}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status OK', function () { pm.expect(pm.response.code).to.be.oneOf([200, 201]); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET api/evaluations",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{apiUrl}}/api/evaluations"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status OK', function () { pm.expect(pm.response.code).to.be.oneOf([200, 201]); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET api/evaluations/summary",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{apiUrl}}/api/evaluations/summary"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status OK', function () { pm.expect(pm.response.code).to.be.oneOf([200, 201]); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Parser service",
+      "item": [
+        {
+          "name": "Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{parserUrl}}/health"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status OK', function () { pm.expect(pm.response.code).to.be.oneOf([200, 201]); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST parse",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{parserUrl}}/parse",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "text",
+                  "contentType": "text/plain",
+                  "filename": "demo.tf",
+                  "value": "resource \"aws_security_group\" \"web\" {\n  vpc_id = \"vpc-1\"\n}\n"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status OK', function () { pm.expect(pm.response.code).to.be.oneOf([200, 201]); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Risk scorer",
+      "item": [
+        {
+          "name": "Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{riskScorerUrl}}/health"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status OK', function () { pm.expect(pm.response.code).to.be.oneOf([200, 201]); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST score",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{riskScorerUrl}}/score",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"resources\": [{\"resource_id\": \"aws_security_group.bad\", \"resource_type\": \"aws_security_group\", \"provider\": \"aws\", \"properties\": {}, \"inbound_rules\": [{\"port\": \"22\", \"protocol\": \"tcp\", \"cidr\": \"0.0.0.0/0\"}], \"outbound_rules\": [], \"tags\": {}, \"source_file\": \"main.tf\", \"source_line\": 1}], \"graph_context\": null}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status OK', function () { pm.expect(pm.response.code).to.be.oneOf([200, 201]); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Graph engine",
+      "item": [
+        {
+          "name": "Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{graphEngineUrl}}/health"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status OK', function () { pm.expect(pm.response.code).to.be.oneOf([200, 201]); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST graph/build",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{graphEngineUrl}}/graph/build",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"resources\": [{\"resource_id\": \"vpc-1\", \"type\": \"vpc\", \"provider\": \"aws\"}, {\"resource_id\": \"sg-1\", \"type\": \"security_group\", \"provider\": \"aws\", \"rules\": [{\"port\": 22, \"protocol\": \"tcp\", \"cidr\": \"0.0.0.0/0\"}]}]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status OK', function () { pm.expect(pm.response.code).to.be.oneOf([200, 201]); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST graph/diff",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{graphEngineUrl}}/graph/diff",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"base\": [{\"resource_id\": \"vpc-1\", \"type\": \"vpc\", \"provider\": \"aws\"}, {\"resource_id\": \"sg-1\", \"type\": \"security_group\", \"provider\": \"aws\", \"rules\": [{\"port\": 22, \"protocol\": \"tcp\", \"cidr\": \"0.0.0.0/0\"}]}], \"head\": [{\"resource_id\": \"vpc-1\", \"type\": \"vpc\", \"provider\": \"aws\"}, {\"resource_id\": \"sg-1\", \"type\": \"security_group\", \"provider\": \"aws\", \"rules\": [{\"port\": 22, \"protocol\": \"tcp\", \"cidr\": \"0.0.0.0/0\"}]}, {\"resource_id\": \"ec2-2\", \"type\": \"ec2_instance\", \"provider\": \"aws\"}]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status OK', function () { pm.expect(pm.response.code).to.be.oneOf([200, 201]); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST graph/store",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{graphEngineUrl}}/graph/store?scan_id=1&graph_type=base",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"resources\": [{\"resource_id\": \"vpc-1\", \"type\": \"vpc\", \"provider\": \"aws\"}, {\"resource_id\": \"sg-1\", \"type\": \"security_group\", \"provider\": \"aws\", \"rules\": [{\"port\": 22, \"protocol\": \"tcp\", \"cidr\": \"0.0.0.0/0\"}]}]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status OK', function () { pm.expect(pm.response.code).to.be.oneOf([200, 201]); });",
+                  "try { var j = pm.response.json(); if (j.graph_id) pm.collectionVariables.set('graphId', j.graph_id); } catch (e) {}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET graph/{graphId}",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{graphEngineUrl}}/graph/{{graphId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status OK', function () { pm.expect(pm.response.code).to.be.oneOf([200, 201]); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST graph/blast-radius",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{graphEngineUrl}}/graph/blast-radius?node_id=sg-1",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"resources\": [{\"resource_id\": \"vpc-1\", \"type\": \"vpc\", \"provider\": \"aws\"}, {\"resource_id\": \"sg-1\", \"type\": \"security_group\", \"provider\": \"aws\", \"rules\": [{\"port\": 22, \"protocol\": \"tcp\", \"cidr\": \"0.0.0.0/0\"}]}]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status OK', function () { pm.expect(pm.response.code).to.be.oneOf([200, 201]); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST graph/subgraph",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{graphEngineUrl}}/graph/subgraph?center_node=sg-1&hops=2",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"resources\": [{\"resource_id\": \"vpc-1\", \"type\": \"vpc\", \"provider\": \"aws\"}, {\"resource_id\": \"sg-1\", \"type\": \"security_group\", \"provider\": \"aws\", \"rules\": [{\"port\": 22, \"protocol\": \"tcp\", \"cidr\": \"0.0.0.0/0\"}]}]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status OK', function () { pm.expect(pm.response.code).to.be.oneOf([200, 201]); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST graph/neighbors",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{graphEngineUrl}}/graph/neighbors?node_id=sg-1",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"resources\": [{\"resource_id\": \"vpc-1\", \"type\": \"vpc\", \"provider\": \"aws\"}, {\"resource_id\": \"sg-1\", \"type\": \"security_group\", \"provider\": \"aws\", \"rules\": [{\"port\": 22, \"protocol\": \"tcp\", \"cidr\": \"0.0.0.0/0\"}]}]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status OK', function () { pm.expect(pm.response.code).to.be.oneOf([200, 201]); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

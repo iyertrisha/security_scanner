@@ -1,0 +1,8 @@
+{
+  "scenario-01": {
+    "primary_resource": "aws_security_group.web_sg",
+    "reachable_resources": ["aws_security_group.web_sg"],
+    "blast_radius_count": 1,
+    "attack_narrative": "Internet reaches SSH-exposed security group directly."
+  }
+}
