@@ -1,32 +1,45 @@
 # NetGuard frontend (React + Vite)
 
-## Environment variables
+## Local development
 
-Copy `.env.example` to `.env` and adjust:
+```bash
+cp .env.example .env
+npm install
+npm run dev
+```
 
 | Variable | Purpose |
 |----------|---------|
-| `VITE_API_BASE_URL` | Base URL of the NetGuard API (default `http://localhost:8000`). |
-| `VITE_GITHUB_WORKFLOW_URL` | Optional. If set, the **Scans** page shows a link to your `netguard.yml` on GitHub (e.g. `https://github.com/org/repo/blob/main/.github/workflows/netguard.yml`). |
-| `VITE_CI_REPO_LABEL` | Optional display label for the repo/workflow hint (e.g. `org/repo`). Defaults to a placeholder when unset. |
+| `VITE_API_BASE_URL` | API base URL. Use `http://localhost:8000` when running the backend locally (default in `.env.example`). |
+| `VITE_GITHUB_WORKFLOW_URL` | Optional link to `netguard.yml` on the Scans page. |
+| `VITE_CI_REPO_LABEL` | Optional repo label in the PR scan guide. |
 
-PR-driven scans do not use the UI to upload files; GitHub Actions POSTs to the API. The UI lists scans from `GET /api/scans` and repositories from `GET /api/repos`.
+With `npm run dev`, Vite sets `import.meta.env.DEV` to `true`, so the app calls `http://localhost:8000` (from your `.env` or the built-in fallback). **`vercel.json` rewrites are not used locally.**
 
----
+Start the API stack from the monorepo root (`docker compose up` or uvicorn on port 8000) before using signup, dashboard, or scans.
 
-## React + Vite (template)
+## Vercel + EC2 (production demo)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+The UI is deployed at **https://net-guard-steel.vercel.app**. API traffic uses **same-origin** paths (`/api/*`) proxied to EC2 via [`vercel.json`](vercel.json):
 
-Currently, two official plugins are available:
+- Browser → `https://net-guard-steel.vercel.app/api/...`
+- Vercel edge → `http://13.234.87.247:8000/api/...`
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+**Vercel dashboard:** leave `VITE_API_BASE_URL` **unset** (or set to `https://net-guard-steel.vercel.app`). Do **not** set the raw EC2 IP or ngrok URL in Vercel env vars.
 
-## React Compiler
+**GitHub Actions** (IaC repos) should use **direct EC2** for `NETGUARD_API_URL` (`http://13.234.87.247:8000`), not the Vercel URL, because scans can run longer than Vercel proxy timeouts.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+**EC2 operator** (edit `~/mini-project/.env` manually on the server — see root `.env.example`):
 
-## Expanding the ESLint configuration
+- `NETGUARD_CORS_ORIGINS=https://net-guard-steel.vercel.app` (optional with same-origin proxy)
+- `NETGUARD_API_URL=http://13.234.87.247:8000` (for Settings UI and CI secrets display)
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+PR-driven scans are posted by GitHub Actions, not the UI. The dashboard reads `GET /api/scans` and `GET /api/repos`.
+
+## Scripts
+
+| Command | Purpose |
+|---------|---------|
+| `npm run dev` | Local dev server (port 5173) |
+| `npm run build` | Production build for Vercel |
+| `npm run lint` | ESLint |
