@@ -2,91 +2,229 @@
 
 **Team 18 · MSRIT · CSP67 Mini Project**
 
-NetGuard scans Terraform and Kubernetes in pull requests, builds a network topology graph, scores risk with deterministic rules plus LLM enrichment, and can propose autofixes posted back to GitHub PRs.
+NetGuard is a pull-request security platform for **Terraform** and **Kubernetes**. It parses infrastructure-as-code, builds a live network topology graph, scores findings with deterministic rules and optional LLM enrichment, and can propose autofixes back to GitHub PRs.
 
 **Live demo:** [https://net-guard-msrit.vercel.app/](https://net-guard-msrit.vercel.app/)
 
-**Repository:** [https://github.com/iyertrisha/security_scanner](https://github.com/iyertrisha/security_scanner)
+| Repo | Purpose |
+|------|---------|
+| [security_scanner](https://github.com/iyertrisha/security_scanner) | Full stack (backend + frontend source) |
+| [Net-Guard](https://github.com/iyertrisha/Net-Guard) | Frontend deployed to Vercel |
+| [demo-guard](https://github.com/iyertrisha/demo-guard) | Sample flawed IaC for CI demos |
 
 ---
 
-## How it works
+## What NetGuard does
 
-### End-to-end flow
+Modern cloud breaches often start with small IaC misconfigurations: SSH open to the internet, public S3 buckets, internet-facing EC2 instances with admin IAM roles, privileged Kubernetes pods, and more. NetGuard catches these **before merge** and gives engineers a clear path to fix them.
 
-1. **Customer IaC repo (e.g. [demo-guard](https://github.com/iyertrisha/demo-guard))** — A GitHub Actions workflow runs on every PR, collects all `.tf` / `.yaml` / `.yml` files, HMAC-signs the payload, and POSTs to `NETGUARD_API_URL/api/scan`.
-2. **Backend API (EC2, port 8000)** — Orchestrates parser → graph engine → risk scorer, persists scans/findings in PostgreSQL, applies org-scoped auth via `X-API-Key`.
-3. **Parser (8001)** — Normalizes Terraform and Kubernetes into a shared resource schema.
-4. **Graph engine (8002)** — Builds nodes/edges (VPC, subnets, SGs, EC2, RDS, S3, K8s workloads) and PR-level diffs for blast-radius analysis.
-5. **Risk scorer (8003)** — Deterministic rules (public ports, permissive IAM, unencrypted storage, cross-resource chains such as **internet-facing EC2 + admin IAM**) plus optional Gemini LLM ±1 severity enrichment.
-6. **GitHub Actions** — Posts a summary comment on the PR; fails the check if HIGH/CRITICAL findings remain (merge gate).
-7. **Web UI (Vercel)** — Same-origin proxy to the API (`/api/*` → EC2). Users sign up, view scan history, explore the D3 graph, run **Suggest fix**, and **Post to GitHub PR** with a confirmation dialog.
+**Core capabilities:**
 
-### Deployment model (production demo)
+- **PR-driven scanning** — GitHub Actions collects all `.tf` / `.yaml` / `.yml` files in a branch, signs the payload with HMAC, and POSTs to the NetGuard API.
+- **Topology graph** — VPCs, subnets, security groups, EC2, RDS, S3, and K8s workloads are linked as nodes and edges for blast-radius analysis.
+- **Deterministic risk rules** — 11+ rules plus cross-resource chains (e.g. internet-facing EC2 + admin IAM → CRITICAL).
+- **LLM enrichment** — Optional Gemini/Groq/OpenAI explanations and **Suggest fix** autofix proposals with diff preview.
+- **Merge gate** — CI fails if non-overridden HIGH or CRITICAL findings remain.
+- **Dashboard** — Sign up, view scan history, explore the D3 graph, run autofix, and post comments to GitHub PRs.
 
-| Component | Host | Notes |
-|-----------|------|--------|
-| Frontend | [Vercel](https://net-guard-msrit.vercel.app/) | React + Vite; `vercel.json` rewrites `/api` to the API |
-| API + microservices + Postgres | AWS EC2 | Docker Compose: `db`, `parser`, `graph_engine`, `risk_scorer`, `api` |
-| Sample flawed IaC | [demo-guard](https://github.com/iyertrisha/demo-guard) | Breach-inspired branches for NetGuard CI demos |
+---
 
-### Architecture (local / EC2)
+## Architecture
+
+```
+GitHub PR (demo-guard)
+       │
+       ▼  HMAC-signed POST /api/scan
+┌──────────────────────────────────────────────────┐
+│  EC2 — Docker Compose                            │
+│  ┌─────┐  ┌────────┐  ┌─────────────┐  ┌──────┐ │
+│  │ API │→ │ Parser │→ │Graph Engine │→ │Risk  │ │
+│  │8000 │  │ 8001   │  │    8002     │  │Scorer│ │
+│  └─────┘  └────────┘  └─────────────┘  │ 8003 │ │
+│       │                                 └──────┘ │
+│       └──────────────► PostgreSQL (5432)         │
+└──────────────────────────────────────────────────┘
+       ▲
+       │  /api/* proxied via vercel.json
+┌──────┴───────┐
+│ Vercel (UI)  │  React + Vite dashboard
+└──────────────┘
+```
 
 | Service | Port | Role |
 |---------|------|------|
 | API | 8000 | Auth, scans, autofix, GitHub comment posting |
-| Parser | 8001 | IaC parsing |
-| Graph engine | 8002 | Topology + PR diff |
-| Risk scorer | 8003 | Rules + LLM |
+| Parser | 8001 | IaC parsing (Terraform + Kubernetes) |
+| Graph engine | 8002 | Topology graph + PR diff |
+| Risk scorer | 8003 | Rules + LLM enrichment |
 | PostgreSQL | 5432 | Scans, findings, fix proposals |
-| Frontend (dev) | 5173 | `npm run dev` in `frontend/` |
+| Frontend (dev) | 5173 | Local Vite dev server |
 
 ---
 
-## Demo videos
+## Prerequisites
 
-Recordings are in **Git LFS** under `docs/demos/`. Click a link to open GitHub’s built-in video player on the file page.
-
-| Demo | Watch (GitHub LFS player) |
-|------|---------------------------|
-| Dashboard, login, and scan overview | [01-netguard-dashboard-and-scan.mov](https://github.com/iyertrisha/security_scanner/blob/main/docs/demos/01-netguard-dashboard-and-scan.mov) |
-| PR scan results and findings | [02-pr-scan-and-findings.mov](https://github.com/iyertrisha/security_scanner/blob/main/docs/demos/02-pr-scan-and-findings.mov) |
-| LLM autofix and post comment to GitHub PR | [03-autofix-and-github-pr-comment.mov](https://github.com/iyertrisha/security_scanner/blob/main/docs/demos/03-autofix-and-github-pr-comment.mov) |
-
-After clone, run `git lfs pull` to download the `.mov` files locally.
+- **Docker** and **Docker Compose** (v2)
+- **Node.js 20+** and **npm** (for local frontend dev)
+- **Python 3.12+** (optional, for running tests outside Docker)
+- **Git** and **Git LFS** (for demo video files)
 
 ---
 
-## Quick start (local)
+## Run locally
+
+### 1. Clone and configure
 
 ```bash
 git clone https://github.com/iyertrisha/security_scanner.git
 cd security_scanner
 git lfs pull
 
-cp .env.example .env   # set DATABASE_URL, GEMINI_API_KEY, GITHUB_TOKEN, etc.
-python3.12 -m venv venv && source venv/bin/activate
-pip install -r requirements.txt
-
-docker compose up -d db parser graph_engine risk_scorer api
-
-cd frontend && npm install && npm run dev
-# UI: http://localhost:5173   API: http://localhost:8000
+cp .env.example .env
 ```
 
-Run tests:
+Edit `.env` with at least:
+
+```env
+NETGUARD_API_URL=http://localhost:8000
+LLM_PROVIDER=gemini
+GEMINI_API_KEY=your_key_from_aistudio.google.com
+GEMINI_MODEL=gemini-2.5-flash
+GITHUB_TOKEN=github_pat_...          # optional — Post to GitHub PR
+NETGUARD_SECRET=$(openssl rand -hex 32)
+```
+
+Generate HMAC secret:
 
 ```bash
+openssl rand -hex 32
+```
+
+### 2. Start the backend
+
+```bash
+docker compose up -d --build db parser graph_engine risk_scorer api
+```
+
+Wait ~1–2 minutes, then verify:
+
+```bash
+curl http://localhost:8000/health   # {"status":"ok","service":"api"}
+curl http://localhost:8001/health   # parser
+curl http://localhost:8002/health   # graph engine
+curl http://localhost:8003/health   # risk scorer
+```
+
+### 3. Start the frontend
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Open **http://localhost:5173**
+
+### 4. Create an account
+
+1. Go to **http://localhost:5173/signup** (not `/login` first — signup stores your API key in the browser).
+2. Create an org and **copy the API key** shown once.
+3. Use the dashboard: Scan History, topology graph, Suggest fix.
+
+### 5. Run tests
+
+```bash
+python3.12 -m venv venv && source venv/bin/activate
+pip install -r requirements.txt
 pytest
 ```
 
-### Connect a GitHub IaC repo
+### Useful commands
 
-1. Sign up at the [live app](https://net-guard-msrit.vercel.app/) or via `POST /api/auth/signup`.
-2. In **Settings**, copy your API key and HMAC secret.
-3. In your IaC repo, add secrets: `NETGUARD_API_URL`, `NETGUARD_SECRET`, `NETGUARD_API_KEY`.
-4. Copy `.github/workflows/netguard.yml` and `scripts/post_pr_findings.py` from this repo.
-5. Open a PR — NetGuard scans, comments, and blocks on critical findings.
+```bash
+# View API logs
+docker compose logs -f api
+
+# Restart after .env changes
+docker compose up -d --force-recreate api risk_scorer
+
+# Stop everything
+docker compose down
+```
+
+---
+
+## Production deployment
+
+| Component | Host | Notes |
+|-----------|------|--------|
+| Frontend | [Vercel](https://net-guard-msrit.vercel.app/) | Deploy from [Net-Guard](https://github.com/iyertrisha/Net-Guard) repo |
+| Backend | AWS EC2 | `docker compose up -d db parser graph_engine risk_scorer api` |
+| Sample IaC | [demo-guard](https://github.com/iyertrisha/demo-guard) | Breach-inspired branches for demos |
+
+### EC2 backend
+
+1. Launch Ubuntu EC2 (t3.small+), open ports **22** and **8000**.
+2. Install Docker, clone this repo, create `.env`:
+
+```env
+NETGUARD_API_URL=http://YOUR_EC2_PUBLIC_IP:8000
+GEMINI_API_KEY=...
+GITHUB_TOKEN=...
+NETGUARD_SECRET=...
+NETGUARD_CORS_ORIGINS=https://net-guard-msrit.vercel.app
+```
+
+3. Start backend only (no frontend container on EC2):
+
+```bash
+docker compose up -d --build db parser graph_engine risk_scorer api
+curl http://localhost:8000/health
+```
+
+### Vercel frontend
+
+Update `vercel.json` in the **Net-Guard** repo to proxy to your EC2 IP:
+
+```json
+"destination": "http://YOUR_EC2_PUBLIC_IP:8000/api/:path*"
+```
+
+Push to `main` on [iyertrisha/Net-Guard](https://github.com/iyertrisha/Net-Guard) — Vercel redeploys automatically.
+
+Leave `VITE_API_BASE_URL` **unset** on Vercel so the browser uses same-origin `/api/*`.
+
+---
+
+## Connect a GitHub IaC repo (CI pipeline)
+
+1. **Sign up** at the [live app](https://net-guard-msrit.vercel.app/signup) or locally.
+2. In **Settings**, note your **API key** and **HMAC secret** (`NETGUARD_SECRET` from server `.env`).
+3. In your IaC repo (e.g. demo-guard), add GitHub Actions secrets:
+
+| Secret | Value |
+|--------|-------|
+| `NETGUARD_API_URL` | `http://YOUR_EC2_IP:8000` (direct EC2, not Vercel URL) |
+| `NETGUARD_SECRET` | Same as server `.env` |
+| `NETGUARD_API_KEY` | From signup |
+| `NETGUARD_UI_URL` | `https://net-guard-msrit.vercel.app` (optional) |
+
+4. Copy `.github/workflows/netguard.yml` and `scripts/post_pr_findings.py` from this repo into your IaC repo.
+5. Open a PR — NetGuard scans, comments on the PR, and blocks merge on HIGH/CRITICAL findings.
+
+---
+
+## Demo videos
+
+Recordings are in **Git LFS** under `docs/demos/`.
+
+| Demo | Link |
+|------|------|
+| Dashboard, login, and scan overview | [01-netguard-dashboard-and-scan.mov](docs/demos/01-netguard-dashboard-and-scan.mov) |
+| PR scan results and findings | [02-pr-scan-and-findings.mov](docs/demos/02-pr-scan-and-findings.mov) |
+| LLM autofix and post comment to GitHub PR | [03-autofix-and-github-pr-comment.mov](docs/demos/03-autofix-and-github-pr-comment.mov) |
+
+After clone: `git lfs pull`
 
 ---
 
@@ -94,20 +232,35 @@ pytest
 
 ```
 security_scanner/
-├── .github/workflows/netguard.yml
-├── services/           # api, parser, graph_engine, risk_scorer, autofix, database
-├── parser-service/     # Standalone parser package + benchmarks
-├── frontend/           # React UI (also deployed separately to Vercel)
-├── docker/             # Dockerfiles
+├── .github/workflows/netguard.yml   # CI workflow template
+├── services/                        # api, parser, graph_engine, risk_scorer, autofix, database
+├── parser-service/                  # Standalone parser + benchmarks
+├── frontend/                        # React UI (source; Vercel deploys from Net-Guard repo)
+├── docker/                          # Dockerfiles
 ├── docker-compose.yml
 ├── migrations/
-├── scripts/post_pr_findings.py
-├── docs/demos/         # Screen recordings (Git LFS)
+├── scripts/post_pr_findings.py      # CI scan helper
+├── docs/demos/                      # Screen recordings (Git LFS)
 └── tests/
 ```
 
 ---
 
+## Environment variables
+
+See [`.env.example`](.env.example) for the full list. Key variables:
+
+| Variable | Where | Purpose |
+|----------|-------|---------|
+| `GEMINI_API_KEY` | Server `.env` | LLM enrichment + autofix |
+| `LLM_PROVIDER` | Server `.env` | `gemini`, `groq`, or `openai` |
+| `GITHUB_TOKEN` | Server `.env` | Post autofix comments to GitHub PRs |
+| `NETGUARD_SECRET` | Server `.env` + GitHub secrets | HMAC signing for CI scans |
+| `NETGUARD_API_URL` | Server `.env` | Public API URL shown in Settings |
+| `NETGUARD_API_KEY` | GitHub secrets only | Org API key from signup |
+
+---
+
 ## Security note
 
-Do not commit real API keys. Use `.env` locally and GitHub/Vercel secrets in production. The bundled [demo-guard](https://github.com/iyertrisha/demo-guard) IaC is intentionally vulnerable — never apply it to a real AWS account.
+Do not commit real API keys. Use `.env` locally and GitHub/Vercel secrets in production. The [demo-guard](https://github.com/iyertrisha/demo-guard) IaC is **intentionally vulnerable** — never apply it to a real AWS account.

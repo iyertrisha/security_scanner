@@ -53,6 +53,9 @@ services:
       - "8002:8002"
     env_file:
       - .env
+    environment:
+      DATABASE_URL: postgresql://netguard:netguard@db:5432/netguard
+      NETGUARD_SQLITE_FALLBACK: "0"
     depends_on:
       db:
         condition: service_healthy
@@ -90,6 +93,13 @@ services:
       - "8000:8000"
     env_file:
       - .env
+    environment:
+      DATABASE_URL: postgresql://netguard:netguard@db:5432/netguard
+      NETGUARD_SQLITE_FALLBACK: "0"
+      # Inside Compose, localhost is the API container — use service DNS names.
+      PARSER_SERVICE_URL: http://parser:8001
+      GRAPH_ENGINE_SERVICE_URL: http://graph_engine:8002
+      RISK_SCORER_SERVICE_URL: http://risk_scorer:8003
     depends_on:
       db:
         condition: service_healthy
