@@ -6,11 +6,7 @@ NetGuard is a pull-request security platform for **Terraform** and **Kubernetes*
 
 **Live demo:** [https://net-guard-msrit.vercel.app/](https://net-guard-msrit.vercel.app/)
 
-| Repo | Purpose |
-|------|---------|
-| [security_scanner](https://github.com/iyertrisha/security_scanner) | Full stack (backend + frontend source) |
-| [Net-Guard](https://github.com/iyertrisha/Net-Guard) | Frontend deployed to Vercel |
-| [demo-guard](https://github.com/iyertrisha/demo-guard) | Sample flawed IaC for CI demos |
+**Sample IaC repo:** [demo-guard](https://github.com/iyertrisha/demo-guard)
 
 ---
 
@@ -156,11 +152,7 @@ docker compose down
 
 ## Production deployment
 
-| Component | Host | Notes |
-|-----------|------|--------|
-| Frontend | [Vercel](https://net-guard-msrit.vercel.app/) | Deploy from [Net-Guard](https://github.com/iyertrisha/Net-Guard) repo |
-| Backend | AWS EC2 | `docker compose up -d db parser graph_engine risk_scorer api` |
-| Sample IaC | [demo-guard](https://github.com/iyertrisha/demo-guard) | Breach-inspired branches for demos |
+The live UI runs on [Vercel](https://net-guard-msrit.vercel.app/). The backend runs on **AWS EC2** via Docker Compose. Use [demo-guard](https://github.com/iyertrisha/demo-guard) as the sample IaC repo for PR scan demos.
 
 ### EC2 backend
 
@@ -184,13 +176,11 @@ curl http://localhost:8000/health
 
 ### Vercel frontend
 
-Update `vercel.json` in the **Net-Guard** repo to proxy to your EC2 IP:
+Update `frontend/vercel.json` to proxy `/api/*` to your EC2 IP, then redeploy on Vercel.
 
 ```json
 "destination": "http://YOUR_EC2_PUBLIC_IP:8000/api/:path*"
 ```
-
-Push to `main` on [iyertrisha/Net-Guard](https://github.com/iyertrisha/Net-Guard) — Vercel redeploys automatically.
 
 Leave `VITE_API_BASE_URL` **unset** on Vercel so the browser uses same-origin `/api/*`.
 
@@ -235,7 +225,7 @@ security_scanner/
 ├── .github/workflows/netguard.yml   # CI workflow template
 ├── services/                        # api, parser, graph_engine, risk_scorer, autofix, database
 ├── parser-service/                  # Standalone parser + benchmarks
-├── frontend/                        # React UI (source; Vercel deploys from Net-Guard repo)
+├── frontend/                        # React UI
 ├── docker/                          # Dockerfiles
 ├── docker-compose.yml
 ├── migrations/
