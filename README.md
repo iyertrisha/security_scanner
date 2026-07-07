@@ -4,7 +4,15 @@
 
 NetGuard is a pull-request security platform for **Terraform** and **Kubernetes**. It parses infrastructure-as-code, builds a live network topology graph, scores findings with deterministic rules and optional LLM enrichment, and can propose autofixes back to GitHub PRs.
 
-**Live demo:** [https://net-guard-msrit.vercel.app/](https://net-guard-msrit.vercel.app/)
+**Live demo:** [https://net-guard-msrit.vercel.app/](https://net-guard-msrit.vercel.app/) currently down cuz like ec2 instances cost monies and i stopped my backend ec2 isntance cause like it costs monies
+
+**Demo videos** (watch on GitHub — run `git lfs pull` after clone to download locally):
+
+| Demo | Watch |
+|------|-------|
+| Dashboard, login, and scan overview | [01 — Dashboard & scan](https://github.com/iyertrisha/security_scanner/blob/main/docs/demos/01-netguard-dashboard-and-scan.mov) |
+| PR scan results and findings | [02 — PR scan & findings](https://github.com/iyertrisha/security_scanner/blob/main/docs/demos/02-pr-scan-and-findings.mov) |
+| LLM autofix and post comment to GitHub PR | [03 — Autofix & GitHub PR](https://github.com/iyertrisha/security_scanner/blob/main/docs/demos/03-autofix-and-github-pr-comment.mov) |
 
 **Sample IaC repo:** [demo-guard](https://github.com/iyertrisha/demo-guard)
 
